@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useRef, useState, useCallback } from 'react';
 import { TickCorners, DataRow, CopyableShare, Fingerprint, QRBlock } from './ui/shared';
 import { fmtUTC, shortHash, placeholderSvg } from '@/lib/data';
 import type { FeedItem } from '@/lib/data';
@@ -28,6 +28,30 @@ function CertLoadingRows() {
 }
 
 export function CertificateCard({ cert, busy }: { cert: FeedItem | null; busy: boolean }) {
+  const certRef = useRef<HTMLDivElement>(null);
+  const [exporting, setExporting] = useState(false);
+
+  const exportCert = useCallback(async () => {
+    if (!certRef.current || exporting) return;
+    setExporting(true);
+    try {
+      const { default: html2canvas } = await import('html2canvas-pro');
+      const canvas = await html2canvas(certRef.current, {
+        backgroundColor: '#0d0d13',
+        scale: 2,
+        useCORS: true,
+      });
+      const link = document.createElement('a');
+      link.download = `verigen-cert-${cert?.regNum || 'draft'}.png`;
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+    } catch (err) {
+      console.error('[export] failed:', err);
+    } finally {
+      setExporting(false);
+    }
+  }, [cert, exporting]);
+
   if (!cert && !busy) return null;
   const network = process.env.NEXT_PUBLIC_SUI_NETWORK || 'mainnet';
   const verifyUrl = cert
@@ -51,7 +75,7 @@ export function CertificateCard({ cert, busy }: { cert: FeedItem | null; busy: b
         </span>
       </div>
 
-      <div className="cert">
+      <div className="cert" ref={certRef}>
         <TickCorners />
 
         <div className={'cert-image' + (busy ? ' loading' : '')}>
@@ -178,6 +202,12 @@ export function CertificateCard({ cert, busy }: { cert: FeedItem | null; busy: b
                   <span>↗ Walrus Blob Explorer</span>
                   <span className="arr">→</span>
                 </a>
+              </div>
+              <div className="cert-actions">
+                <button onClick={exportCert} disabled={exporting} className="export-btn">
+                  <span>{exporting ? '⏳ Exporting…' : '↓ Export Certificate as PNG'}</span>
+                  <span className="arr">→</span>
+                </button>
               </div>
               <CopyableShare url={verifyUrl} />
             </>

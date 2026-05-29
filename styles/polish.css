@@ -619,3 +619,152 @@ body::after {
   text-transform: uppercase;
   color: var(--fg-3);
 }
+
+/* ───────────── Wallet Connect ───────────── */
+.wallet-connect {
+  display: flex;
+  align-items: center;
+}
+.wallet-connected {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  color: var(--verified);
+  background: rgba(0, 255, 136, 0.06);
+  border: 1px solid rgba(0, 255, 136, 0.15);
+  padding: 4px 10px;
+  border-radius: 2px;
+}
+.wallet-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--verified);
+  animation: pulse-dot 2s infinite;
+}
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+.wallet-btn,
+.wallet-connect button {
+  font-family: var(--mono) !important;
+  font-size: 10px !important;
+  letter-spacing: 0.12em !important;
+  text-transform: uppercase !important;
+  background: rgba(245, 245, 244, 0.05) !important;
+  color: var(--fg) !important;
+  border: 1px solid var(--line) !important;
+  padding: 4px 12px !important;
+  border-radius: 2px !important;
+  cursor: pointer !important;
+  transition: border-color 0.2s !important;
+}
+.wallet-connect button:hover {
+  border-color: var(--accent) !important;
+}
+
+/* ───────────── Export Certificate Button ───────────── */
+.export-btn {
+  cursor: pointer;
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: rgba(0, 255, 136, 0.04);
+  border: 1px solid rgba(0, 255, 136, 0.15);
+  color: var(--verified);
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 10px 16px;
+  transition: all 0.2s;
+}
+.export-btn:hover {
+  background: rgba(0, 255, 136, 0.08);
+  border-color: var(--verified);
+}
+.export-btn:disabled {
+  opacity: 0.5;
+  cursor: wait;
+}
+
+/* ───────────── Walrus Blob Preview ───────────── */
+.walrus-preview {
+  border: 1px solid var(--line);
+  margin-bottom: 16px;
+}
+.walrus-preview-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--line);
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+.walrus-tag {
+  color: var(--accent);
+}
+.walrus-status {
+  color: var(--verified);
+}
+.walrus-preview-img {
+  position: relative;
+  aspect-ratio: 16 / 10;
+  overflow: hidden;
+  background: var(--bg-2);
+}
+.walrus-preview-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+.walrus-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 6px 12px;
+  background: linear-gradient(transparent, rgba(13, 13, 19, 0.85));
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--fg-3);
+}
+
+/* ───────────── Verify Explorer Links ───────────── */
+.verify-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+.verify-action-link {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 12px;
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--fg-2);
+  border: 1px solid var(--line);
+  text-decoration: none;
+  transition: all 0.2s;
+}
+.verify-action-link:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}

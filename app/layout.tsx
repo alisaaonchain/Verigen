@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { WalletProvider } from '@/components/WalletProvider';
 import '@/styles/globals.css';
 import '@/styles/home.css';
 import '@/styles/verify.css';
@@ -21,7 +22,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           rel="stylesheet"
         />
       </head>
-      <body>{children}</body>
+      <body>
+        <WalletProvider>{children}</WalletProvider>
+      </body>
     </html>
   );
 }

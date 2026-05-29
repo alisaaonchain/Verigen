@@ -2,6 +2,7 @@
 
 import React, { useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
+import { useCurrentAccount } from '@mysten/dapp-kit';
 import { Nav } from '@/components/ui/Nav';
 import { Footer } from '@/components/ui/Footer';
 import { Ticker } from '@/components/ui/Ticker';
@@ -11,6 +12,7 @@ import type { FeedItem } from '@/lib/data';
 
 export default function Home() {
   const router = useRouter();
+  const walletAccount = useCurrentAccount();
   const [feed, setFeed] = useState<FeedItem[]>(() => buildSeedFeed());
   const [busy, setBusy] = useState(false);
   const [stepIdx, setStepIdx] = useState(0);
@@ -43,7 +45,10 @@ export default function Home() {
         const res = await fetch('/api/generate', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ prompt }),
+          body: JSON.stringify({
+            prompt,
+            creatorAddress: walletAccount?.address || 'anonymous',
+          }),
         });
 
         clearTimeout(t2);
@@ -112,7 +117,7 @@ export default function Home() {
         }, 500);
       }
     },
-    [busy, totalCount]
+    [busy, totalCount, walletAccount]
   );
 
   return (

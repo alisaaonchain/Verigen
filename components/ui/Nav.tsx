@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { ConnectWallet } from '@/components/ConnectWallet';
 
 export function Nav({
   page,
@@ -55,6 +56,7 @@ export function Nav({
             </span>
             <span>{t}</span>
             <span>REG · {feedCount.toLocaleString()}</span>
+            <ConnectWallet />
           </div>
         </div>
       </div>

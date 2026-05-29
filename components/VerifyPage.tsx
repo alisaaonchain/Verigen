@@ -172,8 +172,28 @@ function VerifyResultPanel({
   }
   if (status === 'verifying') return <VerifyingState progress={progress} fileSrc={fileSrc} />;
   if (status === 'result' && result) {
+    const network = typeof window !== 'undefined'
+      ? (process.env.NEXT_PUBLIC_SUI_NETWORK || 'mainnet')
+      : 'mainnet';
     return (
       <>
+        {/* Walrus blob image preview */}
+        {result.originalSrc && !result.originalSrc.includes('data:image/svg') && (
+          <div className="walrus-preview">
+            <div className="walrus-preview-head">
+              <span className="walrus-tag">WALRUS BLOB PREVIEW</span>
+              <span className="walrus-status">● FETCHED FROM DECENTRALIZED STORAGE</span>
+            </div>
+            <div className="walrus-preview-img">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={result.originalSrc} alt="Original from Walrus" />
+              <div className="walrus-overlay">
+                <span>ORIGINAL · WALRUS</span>
+              </div>
+            </div>
+          </div>
+        )}
+
         <Verdict
           kind={result.kind}
           originalHash={result.originalHash}
@@ -200,6 +220,28 @@ function VerifyResultPanel({
           )}
           <DataRow k="Walrus Blob" v={shortHash(result.blobId, 14, 14)} copy />
           <DataRow k="Sui Tx Digest" v={shortHash(result.suiTx, 14, 14)} copy />
+        </div>
+
+        {/* Explorer links */}
+        <div className="verify-actions">
+          <a
+            href={`https://walruscan.com/${network}/blob/${result.blobId}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="verify-action-link"
+          >
+            ↗ View on Walrus Explorer
+          </a>
+          {result.suiTx && result.suiTx.length > 10 && (
+            <a
+              href={`https://suiscan.xyz/${network}/tx/${result.suiTx}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="verify-action-link"
+            >
+              ↗ View on SuiScan
+            </a>
+          )}
         </div>
       </>
     );

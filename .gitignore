@@ -34,3 +34,8 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# sui move build artifacts
+contracts/build/
+contracts/Move.lock
+contracts/Published.toml
