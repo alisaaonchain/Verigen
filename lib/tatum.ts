@@ -70,17 +70,23 @@ export async function registerCertificate(params: {
 }): Promise<{ txDigest: string; blockHeight: number }> {
   const { Ed25519Keypair } = await import('@mysten/sui/keypairs/ed25519');
 
-  const privateKeyB64 = process.env.SUI_PRIVATE_KEY || '';
+  const privateKey = process.env.SUI_PRIVATE_KEY || '';
   const registryId = process.env.SUI_REGISTRY_OBJECT_ID || '';
   const packageId = process.env.SUI_PACKAGE_ID || '';
 
-  if (!privateKeyB64 || !registryId || !packageId) {
+  if (!privateKey || !registryId || !packageId) {
     throw new Error('SUI_PRIVATE_KEY, SUI_REGISTRY_OBJECT_ID, and SUI_PACKAGE_ID are required');
   }
 
-  const keypair = Ed25519Keypair.fromSecretKey(
-    Buffer.from(privateKeyB64, 'base64')
-  );
+  // Support both bech32 (suiprivkey1...) and base64 private key formats
+  let keypair: InstanceType<typeof Ed25519Keypair>;
+  if (privateKey.startsWith('suiprivkey')) {
+    const { decodeSuiPrivateKey } = await import('@mysten/sui/cryptography');
+    const decoded = decodeSuiPrivateKey(privateKey);
+    keypair = Ed25519Keypair.fromSecretKey(decoded.secretKey);
+  } else {
+    keypair = Ed25519Keypair.fromSecretKey(Buffer.from(privateKey, 'base64'));
+  }
   const senderAddress = keypair.getPublicKey().toSuiAddress();
 
   // Step 1: Build the move call transaction via Tatum RPC
