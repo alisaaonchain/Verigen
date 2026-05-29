@@ -47,7 +47,7 @@ export async function POST(req: NextRequest) {
       imageBase64,
       metadata: {
         prompt: prompt.trim(),
-        model: 'stability-ai/sdxl',
+        model: 'black-forest-labs/flux-schnell',
         timestamp: new Date(timestamp).toISOString(),
         creator,
         imageHash,
@@ -72,7 +72,7 @@ export async function POST(req: NextRequest) {
       suiTxDigest: txDigest,
       blockHeight,
       prompt: prompt.trim(),
-      model: 'stability-ai/sdxl',
+      model: 'black-forest-labs/flux-schnell',
       timestamp: new Date(timestamp).toISOString(),
       creator,
     });

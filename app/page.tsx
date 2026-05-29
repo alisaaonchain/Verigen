@@ -68,7 +68,7 @@ export default function Home() {
           const cert: FeedItem = {
             id: seed,
             prompt,
-            model: data.model || 'stability-ai/sdxl',
+            model: data.model || 'black-forest-labs/flux-schnell',
             timestamp: new Date(data.timestamp || Date.now()),
             creator: data.creator || '0x' + makeHash(seed).slice(0, 40),
             creatorShort: data.creator
@@ -98,7 +98,7 @@ export default function Home() {
           const cert: FeedItem = {
             id: seed,
             prompt,
-            model: 'stability-ai/sdxl',
+            model: 'black-forest-labs/flux-schnell',
             timestamp: new Date(),
             creator: '0x' + makeHash(seed).slice(0, 40),
             creatorShort: '0x' + makeHash(seed).slice(0, 4) + '…' + makeHash(seed).slice(36, 40),

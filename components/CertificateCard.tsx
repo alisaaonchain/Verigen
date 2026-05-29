@@ -88,7 +88,7 @@ export function CertificateCard({ cert, busy }: { cert: FeedItem | null; busy: b
                 <span>
                   RENDERING
                   <br />
-                  STABILITY-AI / SDXL
+                  FLUX-SCHNELL
                 </span>
               </div>
             )}

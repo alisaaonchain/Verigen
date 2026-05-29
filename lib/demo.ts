@@ -81,7 +81,7 @@ export function generateDemoCert(prompt: string) {
     suiTxDigest,
     blockHeight: 124809213 + Math.floor(Math.random() * 100),
     prompt,
-    model: 'stability-ai/sdxl',
+    model: 'black-forest-labs/flux-schnell',
     timestamp,
     creator,
   };
@@ -93,7 +93,7 @@ export function generateDemoVerifyResult(blobId: string) {
     blobId,
     imageHash: makeHash(seed),
     prompt: SAMPLE_PROMPTS[Math.floor(Math.random() * SAMPLE_PROMPTS.length)],
-    model: 'stability-ai/sdxl',
+    model: 'black-forest-labs/flux-schnell',
     timestamp: new Date('2026-05-22T14:22:00Z').toISOString(),
     creator: '0x7a3f9d2c8e10f5b4a1c2d3e4f5a6b7c8d9e0f1c91d',
     creatorShort: '0x7a3f...c91d',
@@ -117,7 +117,7 @@ export function generateDemoAgentReply(message: string, blobId?: string): string
     return `Creator: 0x7a3f...c91d. Certified 2026-05-22 14:22:00 UTC. Block 124,809,213.`;
   }
   if (q.includes('prompt') || q.includes('original')) {
-    return `Original prompt: "a samurai fox in neon Tokyo, digital art". Model: stability-ai/sdxl.`;
+    return `Original prompt: "a samurai fox in neon Tokyo, digital art". Model: black-forest-labs/flux-schnell.`;
   }
 
   return `Verified. Blob ${blobId.slice(0, 12)}... is certified on Sui mainnet. Hash match confirmed. Creator: 0x7a3f...c91d.`;

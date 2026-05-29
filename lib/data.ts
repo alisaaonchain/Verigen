@@ -109,7 +109,7 @@ export function buildSeedFeed(): FeedItem[] {
       prompt: p,
       creator: SAMPLE_CREATORS[i % SAMPLE_CREATORS.length],
       timestamp: t,
-      model: 'stability-ai/sdxl',
+      model: 'black-forest-labs/flux-schnell',
       imageHash: makeHash('img' + i),
       blobId: makeBlobId(String(i)),
       suiTx: makeTxDigest(String(i)),
@@ -162,7 +162,7 @@ export function makeVerifyFixture() {
   const t = new Date('2026-05-22T14:22:00Z');
   return {
     prompt: 'a samurai fox in neon Tokyo, digital art',
-    model: 'stability-ai/sdxl',
+    model: 'black-forest-labs/flux-schnell',
     timestamp: t,
     creator: '0x7a3f9d2c8e10f5b4a1c2d3e4f5a6b7c8d9e0f1c91d',
     creatorShort: '0x7a3f…c91d',
