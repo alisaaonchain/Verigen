@@ -86,10 +86,10 @@ export interface RegistryEntry {
 }
 
 /**
- * Register a certificate on Sui via Tatum RPC.
+ * Register a certificate on Sui.
  *
- * Builds the transaction locally using @mysten/sui Transaction SDK,
- * signs it with Ed25519, then submits via Tatum's sui_executeTransactionBlock.
+ * Uses @mysten/sui SuiClient (public fullnode) to build the transaction,
+ * signs it locally with Ed25519, then submits via Tatum's RPC gateway.
  */
 export async function registerCertificate(params: {
   blobId: string;
@@ -121,7 +121,7 @@ export async function registerCertificate(params: {
 
   console.log('[tatum] building tx for', senderAddress);
 
-  // Step 1: Build the transaction locally using the Sui Transaction SDK
+  // Build the transaction
   const tx = new Transaction();
   tx.setSender(senderAddress);
   tx.setGasBudget(10000000);
@@ -137,65 +137,42 @@ export async function registerCertificate(params: {
     ],
   });
 
-  // Step 2: Build the transaction bytes (needs reference gas price + coins from RPC)
-  // Fetch sender's gas coins and reference gas price
+  // Build transaction bytes using a minimal RPC client adapter
+  // The Transaction SDK needs these methods to resolve objects and function signatures
+  const rpcClient = {
+    getReferenceGasPrice: async () => {
+      const price = await rpcCall('suix_getReferenceGasPrice', []);
+      return BigInt(price as string);
+    },
+    getCoins: async ({ owner, coinType }: { owner: string; coinType?: string }) => {
+      return await rpcCall('suix_getCoins', [owner, coinType || '0x2::sui::SUI', null, 5]);
+    },
+    getObject: async ({ id, options }: { id: string; options?: Record<string, boolean> }) => {
+      return await rpcCall('sui_getObject', [id, options || { showContent: true, showOwner: true, showType: true }]);
+    },
+    multiGetObjects: async ({ ids, options }: { ids: string[]; options?: Record<string, boolean> }) => {
+      return await rpcCall('sui_multiGetObjects', [ids, options || { showContent: true, showOwner: true, showType: true }]);
+    },
+    getNormalizedMoveFunction: async ({ package: pkg, module, function: fn }: { package: string; module: string; function: string }) => {
+      return await rpcCall('sui_getNormalizedMoveFunction', [pkg, module, fn]);
+    },
+    dryRunTransactionBlock: async ({ transactionBlock }: { transactionBlock: string }) => {
+      return await rpcCall('sui_dryRunTransactionBlock', [transactionBlock]);
+    },
+  };
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [gasPrice, coins] = await Promise.all([
-    rpcCall('suix_getReferenceGasPrice', []) as Promise<string>,
-    rpcCall('suix_getCoins', [senderAddress, '0x2::sui::SUI', null, 1]) as Promise<any>,
-  ]);
-
-  tx.setGasPrice(Number(gasPrice));
-
-  const coinId = coins?.data?.[0]?.coinObjectId;
-  if (!coinId) {
-    throw new Error('No SUI coins found for gas payment');
-  }
-
-  // Fetch the gas coin object for setting gas payment
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const coinObj = await rpcCall('sui_getObject', [
-    coinId,
-    { showContent: true, showOwner: true },
-  ]) as any;
-
-  tx.setGasPayment([{
-    objectId: coinObj.data.objectId,
-    version: coinObj.data.version,
-    digest: coinObj.data.digest,
-  }]);
-
-  // Fetch the registry object for the transaction
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const regObj = await rpcCall('sui_getObject', [
-    registryId,
-    { showContent: true },
-  ]) as any;
-
-  // Build transaction bytes (pure offline, no RPC needed for this step)
-  const txBytes = await tx.build({
-    client: {
-      getReferenceGasPrice: async () => BigInt(gasPrice),
-      getCoins: async () => coins,
-      getObject: async ({ id }: { id: string }) => {
-        if (id === registryId) return regObj;
-        if (id === coinId) return coinObj;
-        // Fetch any other object needed
-        return await rpcCall('sui_getObject', [id, { showContent: true, showOwner: true }]);
-      },
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } as any,
-  });
+  const txBytes = await tx.build({ client: rpcClient as any });
 
   console.log('[tatum] tx built, signing...');
 
-  // Step 3: Sign the transaction
+  // Sign the transaction
   const { signature } = await keypair.signTransaction(txBytes);
   const txBase64 = Buffer.from(txBytes).toString('base64');
 
   console.log('[tatum] submitting to Tatum RPC...');
 
-  // Step 4: Execute via Tatum RPC (write operation — uses API key)
+  // Execute via Tatum RPC (write operation — uses API key)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const result = await tatumRpcCall('sui_executeTransactionBlock', [
     txBase64,
