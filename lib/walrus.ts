@@ -1,12 +1,11 @@
-const PUBLISHER =
-  process.env.WALRUS_NETWORK === 'mainnet'
-    ? 'https://publisher.walrus-mainnet.walrus.space'
-    : 'https://publisher.walrus-testnet.walrus.space';
+// Walrus testnet has free public publisher/aggregator endpoints.
+// Mainnet requires running your own publisher or using an upload relay.
+// We use testnet for blob storage (independent from Sui mainnet for the contract).
+const PUBLISHER = process.env.WALRUS_PUBLISHER_URL
+  || 'https://publisher.walrus-testnet.walrus.space';
 
-const AGGREGATOR =
-  process.env.WALRUS_NETWORK === 'mainnet'
-    ? 'https://aggregator.walrus-mainnet.walrus.space'
-    : 'https://aggregator.walrus-testnet.walrus.space';
+const AGGREGATOR = process.env.WALRUS_AGGREGATOR_URL
+  || 'https://aggregator.walrus-testnet.walrus.space';
 
 export interface WalrusBlob {
   blobId: string;
