@@ -43,7 +43,7 @@ export function Generator({
           <span className="idx">[ MODULE · 02 ]</span>
           <span>Prompt → Certified Artifact</span>
           <span className="meta-stat">
-            MODEL · <b>STABILITY-AI/SDXL</b>
+            MODEL · <b>FLUX-SCHNELL</b>
           </span>
           <span className="meta-stat">
             CHAIN · <b>SUI MAINNET</b>

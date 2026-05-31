@@ -64,7 +64,7 @@ export function VerifyPanel({
           className="v-text-input"
           value={blobId}
           onChange={(e) => setBlobId(e.target.value)}
-          placeholder="verigen.app/verify?blob=0xA9bFEz… or paste blob ID"
+          placeholder="Paste a Walrus blob ID to verify…"
         />
       </div>
 

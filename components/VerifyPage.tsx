@@ -259,9 +259,18 @@ function extractBlobId(input: string): string {
 export function VerifyPage() {
   const fixture = useMemo(() => makeVerifyFixture(), []);
   const [mode, setMode] = useState('blob');
-  const [blobId, setBlobId] = useState(
-    'verigen.app/verify?blob=0xA9bFEzKpL3mN7QrT2WyXc4DfV8H6jKpQsRtUvWxYzA'
-  );
+  const [blobId, setBlobId] = useState(() => {
+    // Check URL params for a blob ID
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const blob = params.get('blob');
+      if (blob) return blob;
+      // Check localStorage for last verified blob
+      const saved = localStorage.getItem('verigen_last_blobId');
+      if (saved) return saved;
+    }
+    return '';
+  });
   const [file, setFile] = useState<File | null>(null);
   const [fileSrc, setFileSrc] = useState<string | null>(null);
   const [status, setStatus] = useState('idle');
