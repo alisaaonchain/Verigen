@@ -213,10 +213,6 @@ Set all environment variables in Vercel dashboard > Settings > Environment Varia
 
 ---
 
-## Team
-
-Solo builder — [@alisaaonchain](https://github.com/alisaaonchain)
-
 ## License
 
 MIT
