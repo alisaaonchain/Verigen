@@ -22,7 +22,7 @@ function FeedCard({
       <div className="thumb">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={item.imageUrl || placeholderSvg(item.seed ?? item.id)} alt="" />
-        <span className="badge">Certified</span>
+        <span className="badge">{item.onChain ? '● On-chain' : 'Certified'}</span>
         <span className="idx-tag">#{String(total - idx).padStart(4, '0')}</span>
         <div className="overlay">
           <div className="kv">

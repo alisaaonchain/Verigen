@@ -60,6 +60,41 @@ export default function Home() {
     localStorage.setItem('verigen_last_cert', JSON.stringify(lastCert));
   }, [lastCert]);
 
+  // Fetch recent on-chain certs and merge into feed
+  useEffect(() => {
+    fetch('/api/recent')
+      .then((r) => r.json())
+      .then((data) => {
+        if (!data.certs || data.certs.length === 0) return;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const onChainCerts: FeedItem[] = data.certs.map((c: any, i: number) => ({
+          id: `onchain-${c.suiTx || i}`,
+          prompt: c.prompt || 'On-chain certified image',
+          model: c.model || 'black-forest-labs/flux-schnell',
+          timestamp: new Date(c.timestamp || Date.now()),
+          creator: c.creator || 'anonymous',
+          creatorShort: c.creator
+            ? c.creator.slice(0, 6) + '…' + c.creator.slice(-4)
+            : 'anonymous',
+          imageHash: c.imageHash || makeHash(c.blobId || String(i)),
+          blobId: c.blobId || makeBlobId(String(i)),
+          suiTx: c.suiTx || makeTxDigest(String(i)),
+          block: 124809264,
+          verified: true,
+          seed: c.blobId || `onchain-${i}`,
+          onChain: true,
+        }));
+        setFeed((prev) => {
+          // Merge: on-chain certs first, then existing (deduped by blobId)
+          const existingBlobIds = new Set(prev.map((f) => f.blobId));
+          const newCerts = onChainCerts.filter((c) => !existingBlobIds.has(c.blobId));
+          if (newCerts.length === 0) return prev;
+          return [...newCerts, ...prev].slice(0, 12);
+        });
+      })
+      .catch(() => { /* ignore — seed feed is fine as fallback */ });
+  }, []);
+
   const onCertify = useCallback(
     async (prompt: string) => {
       if (busy) return;

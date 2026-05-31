@@ -98,6 +98,7 @@ export interface FeedItem {
   seed: string | number;
   regNum?: string;
   imageUrl?: string;
+  onChain?: boolean;
 }
 
 export function buildSeedFeed(): FeedItem[] {
