@@ -205,21 +205,23 @@ function VerifyResultPanel({
           <DataRow k="Prompt" v={result.prompt} mono={false} />
           <DataRow k="Model" v={result.model} />
           <DataRow k="Certified" v={fmtUTC(result.timestamp)} meta="UTC" />
-          <DataRow k="Creator" v={result.creatorShort} copy />
+          <DataRow k="Creator" v={result.creatorShort} copy copyValue={result.creator} />
           <DataRow
             k="On-chain Hash"
             v={'sha256:' + shortHash(result.originalHash, 14, 14)}
             copy
+            copyValue={result.originalHash}
           />
           {result.kind === 'tampered' && (
             <DataRow
               k="Uploaded Hash"
               v={'sha256:' + shortHash(result.uploadedHash, 14, 14)}
               meta="MISMATCH"
+              copyValue={result.uploadedHash}
             />
           )}
-          <DataRow k="Walrus Blob" v={shortHash(result.blobId, 14, 14)} copy />
-          <DataRow k="Sui Tx Digest" v={shortHash(result.suiTx, 14, 14)} copy />
+          <DataRow k="Walrus Blob" v={shortHash(result.blobId, 14, 14)} copy copyValue={result.blobId} />
+          <DataRow k="Sui Tx Digest" v={shortHash(result.suiTx, 14, 14)} copy copyValue={result.suiTx} />
         </div>
 
         {/* Explorer links */}

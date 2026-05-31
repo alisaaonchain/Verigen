@@ -20,18 +20,21 @@ export function DataRow({
   meta,
   mono = true,
   copy = false,
+  copyValue,
 }: {
   k: string;
   v: string;
   meta?: string;
   mono?: boolean;
   copy?: boolean;
+  copyValue?: string;
 }) {
   const [copied, setCopied] = useState(false);
   const onCopy = (e: React.MouseEvent) => {
     e.stopPropagation();
     try {
-      navigator.clipboard.writeText(typeof v === 'string' ? v : String(v || ''));
+      const text = copyValue || (typeof v === 'string' ? v : String(v || ''));
+      navigator.clipboard.writeText(text);
     } catch {
       // ignore
     }

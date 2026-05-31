@@ -160,14 +160,15 @@ export function CertificateCard({ cert, busy }: { cert: FeedItem | null; busy: b
                 <DataRow k="Prompt" v={cert.prompt} mono={false} />
                 <DataRow k="Model" v={cert.model} />
                 <DataRow k="Timestamp" v={fmtUTC(cert.timestamp)} meta="UTC" />
-                <DataRow k="Creator" v={cert.creator} copy />
+                <DataRow k="Creator" v={cert.creator} copy copyValue={cert.creator} />
                 <DataRow
                   k="Image Hash"
                   v={'sha256:' + shortHash(cert.imageHash, 14, 14)}
                   copy
+                  copyValue={cert.imageHash}
                 />
-                <DataRow k="Walrus Blob" v={shortHash(cert.blobId, 14, 14)} copy />
-                <DataRow k="Sui Tx Digest" v={shortHash(cert.suiTx, 14, 14)} copy />
+                <DataRow k="Walrus Blob" v={shortHash(cert.blobId, 14, 14)} copy copyValue={cert.blobId} />
+                <DataRow k="Sui Tx Digest" v={shortHash(cert.suiTx, 14, 14)} copy copyValue={cert.suiTx} />
                 <DataRow k="Block" v={cert.block.toLocaleString()} meta="EPOCH 421" />
               </>
             ) : null}
