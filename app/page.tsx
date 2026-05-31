@@ -13,52 +13,11 @@ import type { FeedItem } from '@/lib/data';
 export default function Home() {
   const router = useRouter();
   const walletAccount = useCurrentAccount();
-  const [feed, setFeed] = useState<FeedItem[]>(() => {
-    // Load saved certs from localStorage and prepend to seed feed
-    if (typeof window !== 'undefined') {
-      try {
-        const saved = localStorage.getItem('verigen_certs');
-        if (saved) {
-          const savedCerts: FeedItem[] = JSON.parse(saved).map((c: FeedItem) => ({
-            ...c,
-            timestamp: new Date(c.timestamp),
-          }));
-          return [...savedCerts, ...buildSeedFeed()].slice(0, 12);
-        }
-      } catch { /* ignore */ }
-    }
-    return buildSeedFeed();
-  });
+  const [feed, setFeed] = useState<FeedItem[]>(() => buildSeedFeed());
   const [busy, setBusy] = useState(false);
   const [stepIdx, setStepIdx] = useState(0);
-  const [lastCert, setLastCert] = useState<FeedItem | null>(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        const saved = localStorage.getItem('verigen_last_cert');
-        if (saved) {
-          const c = JSON.parse(saved);
-          return { ...c, timestamp: new Date(c.timestamp) };
-        }
-      } catch { /* ignore */ }
-    }
-    return null;
-  });
+  const [lastCert, setLastCert] = useState<FeedItem | null>(null);
   const [totalCount, setTotalCount] = useState(38214);
-
-  // Persist certs to localStorage whenever they change
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    // Save only user-generated certs (those with imageUrl)
-    const userCerts = feed.filter((c) => c.imageUrl);
-    if (userCerts.length > 0) {
-      localStorage.setItem('verigen_certs', JSON.stringify(userCerts.slice(0, 5)));
-    }
-  }, [feed]);
-
-  useEffect(() => {
-    if (typeof window === 'undefined' || !lastCert) return;
-    localStorage.setItem('verigen_last_cert', JSON.stringify(lastCert));
-  }, [lastCert]);
 
   // Fetch recent on-chain certs and merge into feed
   useEffect(() => {

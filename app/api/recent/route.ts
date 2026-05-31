@@ -20,18 +20,24 @@ async function rpc(method: string, params: unknown[]) {
  * then extracts blob metadata from each transaction's events/inputs.
  */
 export async function GET() {
-  const registryId = process.env.SUI_REGISTRY_OBJECT_ID;
-  if (!registryId) {
+  const packageId = process.env.SUI_PACKAGE_ID;
+  if (!packageId) {
     return NextResponse.json({ certs: [] });
   }
 
   try {
-    // Query recent transactions that used the registry object as input
+    // Query recent register() calls on the VeriGen registry contract
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const txResult = await rpc('suix_queryTransactionBlocks', [
       {
-        filter: { InputObject: registryId },
-        options: { showInput: true, showEffects: true },
+        filter: {
+          MoveFunction: {
+            package: packageId,
+            module: 'registry',
+            function: 'register',
+          },
+        },
+        options: { showInput: true },
       },
       null, // cursor
       10,   // limit
@@ -49,40 +55,26 @@ export async function GET() {
           ? new Date(Number(tx.timestampMs)).toISOString()
           : null;
 
-        // Extract move call arguments from the transaction
+        // Extract pure inputs (blobId, imageHash, prompt, timestamp)
         const txKind = tx.transaction?.data?.transaction;
         if (!txKind) continue;
 
-        // Handle both single and programmable transactions
-        const calls = txKind.kind === 'ProgrammableTransaction'
-          ? txKind.transactions || []
-          : [];
+        const inputs = txKind.inputs || [];
+        const pureInputs = inputs
+          .filter((inp: { type: string }) => inp.type === 'pure')
+          .map((inp: { value: unknown }) => inp.value);
 
-        for (const call of calls) {
-          if (call.MoveCall) {
-            const mc = call.MoveCall;
-            if (mc.function === 'register' && mc.module === 'registry') {
-              // Extract pure arguments (blobId, imageHash, prompt, timestamp)
-              const inputs = txKind.inputs || [];
-              const pureInputs = inputs
-                .filter((inp: { type: string }) => inp.type === 'pure')
-                .map((inp: { value: unknown }) => inp.value);
-
-              if (pureInputs.length >= 4) {
-                certs.push({
-                  blobId: pureInputs[0],
-                  imageHash: pureInputs[1],
-                  prompt: pureInputs[2],
-                  timestamp: timestamp || new Date(Number(pureInputs[3])).toISOString(),
-                  suiTx: digest,
-                  model: 'black-forest-labs/flux-schnell',
-                });
-              }
-            }
-          }
+        if (pureInputs.length >= 3) {
+          certs.push({
+            blobId: pureInputs[0],
+            imageHash: pureInputs[1],
+            prompt: pureInputs[2],
+            timestamp: timestamp || new Date().toISOString(),
+            suiTx: digest,
+            model: 'black-forest-labs/flux-schnell',
+          });
         }
       } catch {
-        // Skip malformed transactions
         continue;
       }
     }
