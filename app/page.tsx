@@ -41,6 +41,7 @@ export default function Home() {
           block: 124809264,
           verified: true,
           seed: c.blobId || `onchain-${i}`,
+          imageUrl: c.imageUrl || undefined,
           onChain: true,
         }));
         setFeed((prev) => {

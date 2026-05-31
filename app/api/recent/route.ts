@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 
 const SUI_FULLNODE = 'https://fullnode.mainnet.sui.io:443';
+const WALRUS_AGGREGATOR = process.env.WALRUS_AGGREGATOR_URL
+  || 'https://aggregator.walrus-testnet.walrus.space';
 
 async function rpc(method: string, params: unknown[]) {
   const res = await fetch(SUI_FULLNODE, {
@@ -79,7 +81,13 @@ export async function GET() {
       }
     }
 
-    return NextResponse.json({ certs });
+    // Set imageUrl to proxy endpoint — images load lazily per-card
+    const withImages = certs.map((cert) => ({
+      ...cert,
+      imageUrl: `/api/image/${encodeURIComponent(cert.blobId)}`,
+    }));
+
+    return NextResponse.json({ certs: withImages });
   } catch (err: unknown) {
     console.error('[recent] error:', err);
     return NextResponse.json({ certs: [] });
