@@ -88,8 +88,8 @@ export interface RegistryEntry {
 /**
  * Register a certificate on Sui.
  *
- * Uses @mysten/sui SuiClient (public fullnode) to build the transaction,
- * signs it locally with Ed25519, then submits via Tatum's RPC gateway.
+ * Uses @mysten/sui.js v1 SuiClient (public fullnode) to build the tx,
+ * signs it with Ed25519, then submits via Tatum's RPC gateway.
  */
 export async function registerCertificate(params: {
   blobId: string;
@@ -97,8 +97,11 @@ export async function registerCertificate(params: {
   prompt: string;
   timestamp: number;
 }): Promise<{ txDigest: string; blockHeight: number }> {
-  const { Ed25519Keypair } = await import('@mysten/sui/keypairs/ed25519');
-  const { Transaction } = await import('@mysten/sui/transactions');
+  // Use @mysten/sui.js (v1) which has a working SuiClient + TransactionBlock
+  const { SuiClient } = await import('@mysten/sui.js/client');
+  const { TransactionBlock } = await import('@mysten/sui.js/transactions');
+  const { Ed25519Keypair } = await import('@mysten/sui.js/keypairs/ed25519');
+  const { decodeSuiPrivateKey } = await import('@mysten/sui.js/cryptography');
 
   const privateKey = process.env.SUI_PRIVATE_KEY || '';
   const registryId = process.env.SUI_REGISTRY_OBJECT_ID || '';
@@ -111,7 +114,6 @@ export async function registerCertificate(params: {
   // Support both bech32 (suiprivkey1...) and base64 private key formats
   let keypair: InstanceType<typeof Ed25519Keypair>;
   if (privateKey.startsWith('suiprivkey')) {
-    const { decodeSuiPrivateKey } = await import('@mysten/sui/cryptography');
     const decoded = decodeSuiPrivateKey(privateKey);
     keypair = Ed25519Keypair.fromSecretKey(decoded.secretKey);
   } else {
@@ -121,87 +123,32 @@ export async function registerCertificate(params: {
 
   console.log('[tatum] building tx for', senderAddress);
 
-  // Build the transaction
-  const tx = new Transaction();
-  tx.setSender(senderAddress);
-  tx.setGasBudget(10000000);
+  // Use public Sui fullnode for building (no rate limits)
+  const suiClient = new SuiClient({ url: getFullnodeUrl() });
 
-  tx.moveCall({
+  // Build the transaction using v1 TransactionBlock
+  const txb = new TransactionBlock();
+  txb.setSender(senderAddress);
+  txb.setGasBudget(10000000);
+
+  txb.moveCall({
     target: `${packageId}::registry::register`,
     arguments: [
-      tx.object(registryId),
-      tx.pure.string(params.blobId),
-      tx.pure.string(params.imageHash),
-      tx.pure.string(params.prompt),
-      tx.pure.string(String(params.timestamp)),
+      txb.object(registryId),
+      txb.pure(params.blobId),
+      txb.pure(params.imageHash),
+      txb.pure(params.prompt),
+      txb.pure(String(params.timestamp)),
     ],
   });
 
-  // Build transaction bytes using a Proxy-based RPC client adapter.
-  // The Transaction SDK calls various methods (getObject, getReferenceGasPrice,
-  // getNormalizedMoveFunction, getCurrentSystemState, etc.) during build().
-  // We use a JS Proxy to forward any method call to the Sui JSON-RPC fullnode.
-
-  // Map SDK method names to JSON-RPC method names
-  const methodMap: Record<string, string> = {
-    getObject: 'sui_getObject',
-    multiGetObjects: 'sui_multiGetObjects',
-    getCoins: 'suix_getCoins',
-    getReferenceGasPrice: 'suix_getReferenceGasPrice',
-    getNormalizedMoveFunction: 'sui_getNormalizedMoveFunction',
-    dryRunTransactionBlock: 'sui_dryRunTransactionBlock',
-    getLatestSuiSystemState: 'suix_getLatestSuiSystemState',
-    getCurrentSystemState: 'suix_getLatestSuiSystemState',
-    getLatestCheckpointSequenceNumber: 'sui_getLatestCheckpointSequenceNumber',
-  };
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const rpcClient = new Proxy({} as any, {
-    get(_target, prop: string) {
-      return async (args: Record<string, unknown> = {}) => {
-        const rpcMethod = methodMap[prop];
-        if (!rpcMethod) {
-          console.warn(`[tatum] unhandled client method: ${prop}`, args);
-          return undefined;
-        }
-
-        // Convert SDK-style named args to JSON-RPC positional args
-        if (prop === 'getObject') {
-          const { id, options } = args as { id: string; options?: Record<string, boolean> };
-          return rpcCall(rpcMethod, [id, options || { showContent: true, showOwner: true, showType: true }]);
-        }
-        if (prop === 'multiGetObjects') {
-          const { ids, options } = args as { ids: string[]; options?: Record<string, boolean> };
-          return rpcCall(rpcMethod, [ids, options || { showContent: true, showOwner: true, showType: true }]);
-        }
-        if (prop === 'getCoins') {
-          const a = args as { owner: string; coinType?: string };
-          return rpcCall(rpcMethod, [a.owner, a.coinType || '0x2::sui::SUI', null, 5]);
-        }
-        if (prop === 'getReferenceGasPrice') {
-          const price = await rpcCall(rpcMethod, []);
-          return BigInt(price as string);
-        }
-        if (prop === 'getNormalizedMoveFunction') {
-          const a = args as { package: string; module: string; function: string };
-          return rpcCall(rpcMethod, [a.package, a.module, a.function]);
-        }
-        if (prop === 'dryRunTransactionBlock') {
-          const a = args as { transactionBlock: string };
-          return rpcCall(rpcMethod, [a.transactionBlock]);
-        }
-        // Default: call with no params
-        return rpcCall(rpcMethod, []);
-      };
-    },
-  });
-
-  const txBytes = await tx.build({ client: rpcClient });
+  // Build the transaction bytes (SuiClient handles all RPC calls)
+  const txBytes = await txb.build({ client: suiClient });
 
   console.log('[tatum] tx built, signing...');
 
   // Sign the transaction
-  const { signature } = await keypair.signTransaction(txBytes);
+  const { signature } = await keypair.signTransactionBlock(txBytes);
   const txBase64 = Buffer.from(txBytes).toString('base64');
 
   console.log('[tatum] submitting to Tatum RPC...');
