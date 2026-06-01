@@ -62,9 +62,12 @@ Walrus is not an add-on — it **is** the storage layer:
 
 ## Tatum Integration (Sui RPC Gateway)
 
-1. **Transaction execution** — All `sui_executeTransactionBlock` calls route through Tatum's Sui mainnet gateway (`sui-mainnet.gateway.tatum.io`) with `x-api-key` authentication
-2. **AI Agent with MCP tools** — The built-in verification agent uses Tatum MCP-compatible tools to query the Sui registry, fetch blob metadata, and explain verification results in natural language
-3. **On-chain registry queries** — `suix_queryTransactionBlocks` fetches recent certifications from the deployed Move contract to populate the live provenance feed
+All Sui blockchain interactions route through Tatum's RPC gateway with `x-api-key` authentication:
+
+1. **All RPC reads** — `sui_getObject`, `suix_getReferenceGasPrice`, `suix_getCoins`, `suix_queryTransactionBlocks`, `suix_getDynamicFieldObject` — all routed through `sui-mainnet.gateway.tatum.io` with graceful fallback
+2. **Transaction execution** — `sui_executeTransactionBlock` calls route through Tatum's gateway for on-chain certificate registration
+3. **AI Agent with MCP tools** — The built-in verification agent uses Tatum MCP-compatible tools to query the Sui registry, fetch blob metadata, and explain verification results in natural language
+4. **On-chain feed queries** — `suix_queryTransactionBlocks` fetches recent certifications via Tatum to populate the live provenance feed
 
 ---
 
