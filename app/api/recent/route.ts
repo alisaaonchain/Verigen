@@ -1,10 +1,31 @@
 import { NextResponse } from 'next/server';
 
+const TATUM_RPC = 'https://sui-mainnet.gateway.tatum.io';
 const SUI_FULLNODE = 'https://fullnode.mainnet.sui.io:443';
-const WALRUS_AGGREGATOR = process.env.WALRUS_AGGREGATOR_URL
-  || 'https://aggregator.walrus-testnet.walrus.space';
 
 async function rpc(method: string, params: unknown[]) {
+  const apiKey = process.env.TATUM_API_KEY;
+
+  // Try Tatum first
+  if (apiKey) {
+    try {
+      const res = await fetch(TATUM_RPC, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': apiKey,
+        },
+        body: JSON.stringify({ jsonrpc: '2.0', id: 1, method, params }),
+        signal: AbortSignal.timeout(10000),
+      });
+      if (res.ok) {
+        const json = await res.json();
+        if (!json.error) return json.result;
+      }
+    } catch { /* fall through */ }
+  }
+
+  // Fallback to public fullnode
   const res = await fetch(SUI_FULLNODE, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },

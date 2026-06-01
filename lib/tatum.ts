@@ -19,31 +19,46 @@ function getFullnodeUrl(): string {
   return process.env.SUI_NETWORK === 'mainnet' ? SUI_FULLNODE : SUI_TESTNET_FULLNODE;
 }
 
-/** RPC call to public Sui fullnode (reads — no rate limits) */
+/** RPC call — routes through Tatum gateway, falls back to public fullnode */
 async function rpcCall(method: string, params: unknown[]): Promise<unknown> {
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 15000);
+  const apiKey = process.env.TATUM_API_KEY;
 
-  try {
-    const res = await fetch(getFullnodeUrl(), {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ jsonrpc: '2.0', id: 1, method, params }),
-      signal: controller.signal,
-    });
+  // Try Tatum first if API key is available
+  if (apiKey) {
+    try {
+      const res = await fetch(getTatumUrl(), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': apiKey,
+        },
+        body: JSON.stringify({ jsonrpc: '2.0', id: 1, method, params }),
+        signal: AbortSignal.timeout(12000),
+      });
 
-    if (!res.ok) {
-      throw new Error(`Sui RPC HTTP error: ${res.status}`);
+      if (res.ok) {
+        const json = await res.json();
+        if (!json.error) return json.result;
+      }
+      // Non-OK or RPC error — fall through to fullnode
+      console.warn(`[tatum] read ${method} failed (${res.status}), using fullnode`);
+    } catch {
+      console.warn(`[tatum] read ${method} timed out, using fullnode`);
     }
-
-    const json = await res.json();
-    if (json.error) {
-      throw new Error(`Sui RPC error: ${JSON.stringify(json.error)}`);
-    }
-    return json.result;
-  } finally {
-    clearTimeout(timeout);
   }
+
+  // Fallback to public Sui fullnode
+  const res = await fetch(getFullnodeUrl(), {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ jsonrpc: '2.0', id: 1, method, params }),
+    signal: AbortSignal.timeout(15000),
+  });
+
+  if (!res.ok) throw new Error(`Sui RPC HTTP error: ${res.status}`);
+  const json = await res.json();
+  if (json.error) throw new Error(`Sui RPC error: ${JSON.stringify(json.error)}`);
+  return json.result;
 }
 
 /** RPC call to Tatum gateway (writes — uses API key) */
@@ -123,7 +138,9 @@ export async function registerCertificate(params: {
 
   console.log('[tatum] building tx for', senderAddress);
 
-  // Use public Sui fullnode for building (no rate limits)
+  // Use Tatum RPC for building transactions
+  // sui.js v1 SuiClient doesn't support customFetch, so we use the public
+  // fullnode for tx building (many internal calls) and Tatum for execution
   const suiClient = new SuiClient({ url: getFullnodeUrl() });
 
   // Build the transaction using v1 TransactionBlock
